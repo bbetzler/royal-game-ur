@@ -8,7 +8,7 @@ An implementation of the **Royal Game of Ur**, an ancient Mesopotamian race boar
 
 ## Current state
 
-The project is just starting. The repo holds only `README.md` and this file, with no code or build tooling yet, and it is not a git repository yet. Update this file as decisions are made and structure appears (commands, folders, conventions).
+The project is just starting. The repo holds only `README.md` and this file, with no code or build tooling yet. GitHub repo: https://github.com/bbetzler/royal-game-ur (public, default branch `main`). Update this file as decisions are made and structure appears (commands, folders, conventions).
 
 ## Targets
 
