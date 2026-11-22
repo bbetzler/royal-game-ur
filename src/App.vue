@@ -16,6 +16,7 @@ const board = hasWebGL() ? GameBoard3D : GameBoard
 const state = ref<GameState>(newGame(rules, HUMAN))
 const message = ref('Your turn. Roll the dice.')
 let timer: ReturnType<typeof setTimeout> | undefined
+const credits = ref<HTMLDialogElement | null>(null)
 
 const moves = computed(() => legalMoves(state.value, rules))
 const humanMoves = computed(() => (state.value.turn === HUMAN ? moves.value : []))
@@ -122,7 +123,23 @@ watch(
       <button v-if="state.phase !== 'over'" class="roll-btn" :disabled="!canRoll" @click="roll">Roll dice</button>
       <button v-else class="roll-btn" @click="restart">New game</button>
     </div>
-    <button class="link" @click="restart">Restart</button>
+    <footer class="footer">
+      <button class="link" @click="restart">Restart</button>
+      <button class="info" aria-label="About" @click="credits?.showModal()">
+        <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+          <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2" />
+          <path d="M12 11v6M12 7.5v.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+        </svg>
+      </button>
+    </footer>
+
+    <!-- Closes on the button, Esc, or a tap on the backdrop (the dialog element itself). -->
+    <dialog ref="credits" class="credits" @click="$event.target === credits && credits?.close()">
+      <div class="credits-body">
+        <p>Created by Marlon and Boas</p>
+        <button class="roll-btn" @click="credits?.close()">Close</button>
+      </div>
+    </dialog>
   </main>
 </template>
 
@@ -237,5 +254,39 @@ watch(
   text-decoration: underline;
   font: inherit;
   cursor: pointer;
+}
+.footer {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.info {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+}
+.credits {
+  padding: 0;
+  border: 2px solid var(--muted);
+  border-radius: 12px;
+  background: var(--bg);
+  color: var(--text);
+  text-align: center;
+}
+.credits::backdrop {
+  background: rgba(0, 0, 0, 0.6);
+}
+.credits-body {
+  padding: 20px 24px;
+}
+.credits p {
+  margin: 0 0 16px;
+  font-size: 1.1rem;
 }
 </style>
