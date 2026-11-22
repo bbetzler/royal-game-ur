@@ -1,0 +1,31 @@
+/* Black and white board with green rosettes. */
+:root {
+  --bg: #fff;
+  --text: #000;
+  --muted: #000;
+  --square: #fff;
+  --square-border: #000;
+  --rosette: #4caf50;
+  --rosette-mark: #fff;
+  --highlight: #000;
+  --target: #000;
+  --die: #000;
+  --button: #000;
+  --button-text: #fff;
+  /* Square size: fit 3 columns across and 8 rows down a phone screen. */
+  --cell: min(22vw, 7.6vh, 72px);
+  color-scheme: light;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
