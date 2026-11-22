@@ -2,6 +2,17 @@
 import { computed } from 'vue'
 import { type GameState, type Move, squareOf } from '../game/engine'
 import { COLS, ROWS, type Player, type RuleConfig, type Square, isGap, isRosette, sameSquare } from '../game/rules'
+import circles from '../assets/board/circles.jpg'
+import eyes from '../assets/board/eyes.jpg'
+import grid from '../assets/board/grid.jpg'
+import rosette from '../assets/board/rosette.jpg'
+import zigzag from '../assets/board/zigzag.jpg'
+
+// Tile artwork for the plain squares, one string per screen row (= board column), one letter
+// per screen column (= board row). Rosettes come from the rule config and replace these;
+// '-' marks a gap. The lanes mirror each other, as on the original board.
+const TILES: Record<string, string> = { C: circles, E: eyes, G: grid, Z: zigzag }
+const TILE_LAYOUT = ['ZEZ', 'CZC', 'GCG', 'CEC', '-G-', '-E-', 'ZCZ', 'ZGZ']
 
 const props = defineProps<{
   state: GameState
@@ -16,6 +27,7 @@ interface Cell {
   sq: Square
   gap: boolean
   rosette: boolean
+  image: string
   piece: Player | null
   move: Move | null // a selectable move whose piece stands here
   target: boolean // a selectable move ends here
@@ -34,7 +46,9 @@ const cells = computed<Cell[]>(() => {
       }
       const move = props.moves.find((m) => eq(squareOf(props.rules, m.player, m.from), sq)) ?? null
       const target = props.moves.some((m) => eq(squareOf(props.rules, m.player, m.to), sq))
-      out.push({ sq, gap: isGap(sq), rosette: isRosette(props.rules, sq), piece, move, target })
+      const isRos = isRosette(props.rules, sq)
+      const image = isRos ? rosette : (TILES[TILE_LAYOUT[col][row]] ?? '')
+      out.push({ sq, gap: isGap(sq), rosette: isRos, image, piece, move, target })
     }
   }
   return out
@@ -58,7 +72,7 @@ function tap(cell: Cell) {
       :class="{ gap: cell.gap, rosette: cell.rosette, movable: cell.move, target: cell.target }"
       @click="tap(cell)"
     >
-      <span v-if="cell.rosette" class="rosette-mark" aria-label="rosette">✿</span>
+      <img v-if="!cell.gap" class="tile" :src="cell.image" :alt="cell.rosette ? 'rosette' : ''" draggable="false" />
       <span v-if="cell.target && !cell.piece" class="target-dot" />
       <span v-if="cell.piece" class="piece" :class="cell.piece" />
     </div>
@@ -70,54 +84,64 @@ function tap(cell: Cell) {
   display: grid;
   grid-template-columns: repeat(3, var(--cell));
   grid-template-rows: repeat(8, var(--cell));
-  gap: 3px;
   justify-content: center;
+  filter: drop-shadow(0 10px 18px rgba(0, 0, 0, 0.6));
 }
+/* Each square sits in a lapis frame; neighbouring frames form the grout lines. */
 .cell {
+  --grout: calc(var(--cell) * 0.1);
   position: relative;
-  background: var(--square);
-  border: 2px solid var(--square-border);
+  background: url('../assets/board/lapis.jpg') center / calc(var(--cell) * 0.66) auto repeat;
   display: grid;
   place-items: center;
 }
 .cell.gap {
   visibility: hidden;
 }
-.cell.rosette {
-  background: var(--rosette);
-}
-.rosette-mark {
+.tile {
   position: absolute;
-  font-size: calc(var(--cell) * 0.7);
-  line-height: 1;
-  color: var(--rosette-mark);
+  inset: var(--grout);
+  width: calc(100% - 2 * var(--grout));
+  height: calc(100% - 2 * var(--grout));
+  object-fit: cover;
+  pointer-events: none;
+}
+.cell::after {
+  content: '';
+  position: absolute;
+  inset: var(--grout);
   pointer-events: none;
 }
 .cell.movable {
   cursor: pointer;
+}
+.cell.movable::after {
   box-shadow: inset 0 0 0 4px var(--highlight);
 }
-.cell.target {
-  border-style: dashed;
-  border-width: 3px;
+.cell.target::after {
+  border: 3px dashed var(--highlight);
 }
 .target-dot {
+  position: relative;
   width: 25%;
   height: 25%;
   border-radius: 50%;
   background: var(--target);
+  box-shadow: 0 0 0 3px var(--piece-black);
 }
 .piece {
   position: relative;
-  width: 70%;
-  height: 70%;
+  width: 62%;
+  height: 62%;
   border-radius: 50%;
-  border: 2px solid #000;
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.55);
 }
 .piece.white {
-  background: #fff;
+  background: var(--piece-white);
+  border: 3px solid var(--piece-black);
 }
 .piece.black {
-  background: #000;
+  background: var(--piece-black);
+  border: 3px solid var(--piece-white);
 }
 </style>

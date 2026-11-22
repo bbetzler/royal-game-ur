@@ -1,20 +1,18 @@
-/* Black and white board with green rosettes. */
+/* Dark bitumen background with an ivory-and-lapis board, after the original from Ur. */
 :root {
-  --bg: #fff;
-  --text: #000;
-  --muted: #000;
-  --square: #fff;
-  --square-border: #000;
-  --rosette: #4caf50;
-  --rosette-mark: #fff;
-  --highlight: #000;
-  --target: #000;
-  --die: #000;
-  --button: #000;
-  --button-text: #fff;
+  --bg: #1f1915;
+  --text: #f4e7c9;
+  --muted: #cbb994;
+  --highlight: #ffd23f;
+  --target: #ffd23f;
+  --piece-white: #fffdf7;
+  --piece-black: #1a1410;
+  --die: #f4e7c9;
+  --button: #f4e7c9;
+  --button-text: #1f1915;
   /* Square size: fit 3 columns across and 8 rows down a phone screen. */
   --cell: min(22vw, 7.6vh, 72px);
-  color-scheme: light;
+  color-scheme: dark;
 }
 
 * {

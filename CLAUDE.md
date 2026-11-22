@@ -8,7 +8,7 @@ An implementation of the **Royal Game of Ur**, an ancient Mesopotamian race boar
 
 ## Current state
 
-A playable MVP: you (white) play against a simple computer opponent (black) using the Finkel rules. The graphics are kept simple on purpose. It is an installable PWA that works offline, deployed to GitHub Pages.
+A playable MVP: you (white) play against a simple computer opponent (black) using the Finkel rules. The board uses tile artwork cut from `artwork/Board Game png.png` (rosette, four patterned squares, lapis separator) on a dark bitumen background; the rest of the UI is kept simple. It is an installable PWA that works offline, deployed to GitHub Pages.
 
 - GitHub repo: https://github.com/bbetzler/royal-game-ur (public, default branch `main`).
 - Live site: https://bbetzler.github.io/royal-game-ur/. Every push to `main` runs [.github/workflows/deploy.yml](.github/workflows/deploy.yml) (tests, build, deploy). The Pages source is set to "GitHub Actions".
@@ -21,7 +21,7 @@ Update this file as decisions are made.
 - `npm test`: unit tests (Vitest).
 - `npm run typecheck`: `vue-tsc --noEmit`.
 - `npm run build`: type-check and production build into `dist/` (base path `/royal-game-ur/`; the dev server uses `/`).
-- `npm run icons`: regenerate the PNG icons and favicon in `public/` from `public/icon.svg` (config in `pwa-assets.config.ts`). Commit the generated files.
+- `npm run icons`: regenerate the PNG icons and favicon in `public/` from `public/icon.png` (the rosette tile; left out of the offline cache) (config in `pwa-assets.config.ts`). Commit the generated files.
 
 **Windows gotcha:** Vitest fails with `Cannot read properties of undefined (reading 'config')` when it is started from a lowercase drive path (`c:\...`), which is what Git Bash and VS Code terminals may give. Run it from `C:\Users\...` (for example `Set-Location 'C:\Users\boasb\source\royal-game-ur'` in PowerShell).
 
@@ -32,7 +32,8 @@ Update this file as decisions are made.
 - `src/game/ai.ts`: heuristic computer opponent (`chooseMove`).
 - `src/game/engine.test.ts`: rule tests plus a computer-vs-computer full-game check.
 - `src/App.vue`: turn flow, messages, and the timer that drives the computer's turns.
-- `src/components/GameBoard.vue`: the board, drawn upright for portrait screens (board columns are screen rows; black's lane on the left, white's on the right).
+- `src/components/GameBoard.vue`: the board, drawn upright for portrait screens (board columns are screen rows; black's lane on the left, white's on the right). Its `TILE_LAYOUT` places the patterned tiles; rosettes come from the rule config. Each square has a lapis frame, so neighbouring frames form the grout lines.
+- `src/assets/board/`: the tile images (240 px JPEG crops from `artwork/`).
 
 ## Targets
 

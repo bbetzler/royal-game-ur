@@ -143,13 +143,14 @@ watch(
   width: 14px;
   height: 14px;
   border-radius: 50%;
-  border: 2px solid #000;
 }
 .dot.white {
-  background: #fff;
+  background: var(--piece-white);
+  border: 2px solid var(--piece-black);
 }
 .dot.black {
-  background: #000;
+  background: var(--piece-black);
+  border: 2px solid var(--piece-white);
 }
 .pool {
   font: inherit;
@@ -195,7 +196,7 @@ watch(
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: #fff;
+  background: var(--bg);
 }
 .roll {
   font-size: 1.6rem;

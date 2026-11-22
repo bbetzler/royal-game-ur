@@ -10,7 +10,7 @@ export default defineConfig(({ command }) => ({
     VitePWA({
       // A new version installs in the background and is used on the next start.
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.ico', 'apple-touch-icon-180x180.png', 'icon.svg'],
+      includeAssets: ['favicon.ico', 'apple-touch-icon-180x180.png'],
       manifest: {
         name: 'Royal Game of Ur',
         short_name: 'Ur',
@@ -18,8 +18,8 @@ export default defineConfig(({ command }) => ({
         lang: 'en',
         display: 'standalone',
         orientation: 'portrait',
-        background_color: '#ffffff',
-        theme_color: '#000000',
+        background_color: '#1f1915',
+        theme_color: '#1f1915',
         icons: [
           { src: 'pwa-64x64.png', sizes: '64x64', type: 'image/png' },
           { src: 'pwa-192x192.png', sizes: '192x192', type: 'image/png' },
@@ -28,7 +28,9 @@ export default defineConfig(({ command }) => ({
         ],
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,jpg}'],
+        // icon.png is only the source for the generated icons.
+        globIgnores: ['icon.png'],
       },
     }),
   ],
