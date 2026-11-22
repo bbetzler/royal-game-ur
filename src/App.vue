@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import GameBoard from './components/GameBoard.vue'
+import GameBoard3D from './components/GameBoard3D.vue'
 import { chooseMove } from './game/ai'
 import { type GameState, type Move, applyMove, applyRoll, finishPos, legalMoves, newGame, passTurn } from './game/engine'
 import { FINKEL_RULES, type Player } from './game/rules'
@@ -9,6 +10,8 @@ const rules = FINKEL_RULES
 const HUMAN: Player = 'white'
 const COMPUTER: Player = 'black'
 const DELAY = 800
+// The 3D board needs WebGL; without it the flat board is shown.
+const board = hasWebGL() ? GameBoard3D : GameBoard
 
 const state = ref<GameState>(newGame(rules, HUMAN))
 const message = ref('Your turn. Roll the dice.')
@@ -22,6 +25,14 @@ const startMove = computed(() => humanMoves.value.find((m) => m.from === 0) ?? n
 const waiting = (p: Player) => state.value.pieces[p].filter((pos) => pos === 0).length
 const finished = (p: Player) => state.value.pieces[p].filter((pos) => pos === finishPos(rules)).length
 const label = (p: Player) => (p === HUMAN ? 'You' : 'Computer')
+
+function hasWebGL() {
+  try {
+    return !!document.createElement('canvas').getContext('webgl2')
+  } catch {
+    return false
+  }
+}
 
 function later(fn: () => void, ms = DELAY) {
   clearTimeout(timer)
@@ -91,7 +102,7 @@ watch(
       <span>Home: {{ finished(COMPUTER) }}/{{ rules.piecesPerPlayer }}</span>
     </header>
 
-    <GameBoard :state="state" :rules="rules" :moves="humanMoves" @select="select" />
+    <component :is="board" :state="state" :rules="rules" :moves="humanMoves" @select="select" />
 
     <section class="bar">
       <span class="who"><span class="dot white" /> You</span>
