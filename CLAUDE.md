@@ -8,16 +8,20 @@ An implementation of the **Royal Game of Ur**, an ancient Mesopotamian race boar
 
 ## Current state
 
-A playable MVP: you (white) play against a simple computer opponent (black) using the Finkel rules. The graphics are kept simple on purpose. PWA support (manifest, service worker) and GitHub Pages deployment are **not built yet**; they were deferred until after the MVP.
+A playable MVP: you (white) play against a simple computer opponent (black) using the Finkel rules. The graphics are kept simple on purpose. It is an installable PWA that works offline, deployed to GitHub Pages.
 
-GitHub repo: https://github.com/bbetzler/royal-game-ur (public, default branch `main`). Update this file as decisions are made.
+- GitHub repo: https://github.com/bbetzler/royal-game-ur (public, default branch `main`).
+- Live site: https://bbetzler.github.io/royal-game-ur/. Every push to `main` runs [.github/workflows/deploy.yml](.github/workflows/deploy.yml) (tests, build, deploy). The Pages source is set to "GitHub Actions".
+
+Update this file as decisions are made.
 
 ## Commands
 
 - `npm run dev`: dev server on port 5173. Open http://127.0.0.1:5173, because on this machine `localhost:5173` can reach a different app.
 - `npm test`: unit tests (Vitest).
 - `npm run typecheck`: `vue-tsc --noEmit`.
-- `npm run build`: type-check and production build into `dist/`.
+- `npm run build`: type-check and production build into `dist/` (base path `/royal-game-ur/`; the dev server uses `/`).
+- `npm run icons`: regenerate the PNG icons and favicon in `public/` from `public/icon.svg` (config in `pwa-assets.config.ts`). Commit the generated files.
 
 **Windows gotcha:** Vitest fails with `Cannot read properties of undefined (reading 'config')` when it is started from a lowercase drive path (`c:\...`), which is what Git Bash and VS Code terminals may give. Run it from `C:\Users\...` (for example `Set-Location 'C:\Users\boasb\source\royal-game-ur'` in PowerShell).
 
@@ -38,7 +42,7 @@ GitHub repo: https://github.com/bbetzler/royal-game-ur (public, default branch `
 
 ## Tech stack
 
-- **PWA** (installable, works offline: service worker + web app manifest). Planned, not built yet.
+- **PWA** (installable, works offline): `vite-plugin-pwa` generates the manifest and a Workbox service worker that precaches the whole app; `registerType: autoUpdate`. Configured in `vite.config.ts`.
 - **UI:** Vue 3 (`<script setup>`) + TypeScript + Vite. Tests use Vitest.
 - **Hosting:** GitHub Pages (static build only, no backend). Configure the build's base path to match the repo's Pages URL.
 
