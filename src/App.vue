@@ -137,6 +137,11 @@ watch(
     <dialog ref="credits" class="credits" @click="$event.target === credits && credits?.close()">
       <div class="credits-body">
         <p>Created by Marlon and Boas</p>
+        <p>
+          <a href="https://www.jw.org/finder?srcid=share&wtlocale=E&lank=pub-dlf_1_VIDEO&ts=1240" target="_blank" rel="noopener">
+            Daniel and his friends playing the game
+          </a>
+        </p>
         <button class="roll-btn" @click="credits?.close()">Close</button>
       </div>
     </dialog>
@@ -288,5 +293,8 @@ watch(
 .credits p {
   margin: 0 0 16px;
   font-size: 1.1rem;
+}
+.credits a {
+  color: var(--highlight);
 }
 </style>
