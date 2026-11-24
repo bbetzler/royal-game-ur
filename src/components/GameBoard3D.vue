@@ -8,6 +8,8 @@ import eyes from '../assets/board/eyes.jpg'
 import grid from '../assets/board/grid.jpg'
 import lapis from '../assets/board/lapis.jpg'
 import rosette from '../assets/board/rosette.jpg'
+import sideBlue from '../assets/board/side-blue.jpg'
+import sideGold from '../assets/board/side-gold.jpg'
 import zigzag from '../assets/board/zigzag.jpg'
 
 // Same tile layout as the 2D board (GameBoard.vue): one string per board column, one letter
@@ -61,7 +63,7 @@ topTexture.repeat.set(1 / ROWS, 1 / COLS)
 const images: Record<string, HTMLImageElement> = {}
 function loadImages(): Promise<unknown> {
   return Promise.all(
-    [circles, eyes, grid, lapis, rosette, zigzag].map(
+    [circles, eyes, grid, lapis, rosette, sideBlue, sideGold, zigzag].map(
       (src) =>
         new Promise((resolve) => {
           const img = new Image()
@@ -135,56 +137,151 @@ function paintTop() {
   topTexture.needsUpdate = true
 }
 
-// --- Board sides: a neutral, sandy stone texture made procedurally ---
+// --- Board sides: square tiles of gold and lapis, alternating, one per board square ---
 
-function stoneTexture(): THREE.Texture {
-  const size = 256
-  const canvas = document.createElement('canvas')
-  canvas.width = canvas.height = size
-  const ctx = canvas.getContext('2d')!
-  ctx.fillStyle = '#cdbfa6'
-  ctx.fillRect(0, 0, size, size)
-  // Soft blotches, then fine speckle, for a worn sandstone look.
-  for (let i = 0; i < 140; i++) {
-    const r = 6 + Math.random() * 26
-    const light = Math.random() < 0.5
-    ctx.fillStyle = light ? 'rgba(255,248,232,0.07)' : 'rgba(120,100,75,0.07)'
-    ctx.beginPath()
-    ctx.arc(Math.random() * size, Math.random() * size, r, 0, Math.PI * 2)
-    ctx.fill()
-  }
-  for (let i = 0; i < 5000; i++) {
-    const v = Math.random()
-    ctx.fillStyle = v < 0.5 ? `rgba(95,78,58,${0.1 + v * 0.3})` : `rgba(255,250,238,${(v - 0.5) * 0.4})`
-    ctx.fillRect(Math.random() * size, Math.random() * size, 1 + Math.random(), 1 + Math.random())
-  }
-  const tex = new THREE.CanvasTexture(canvas)
-  tex.colorSpace = THREE.SRGBColorSpace
-  tex.wrapS = tex.wrapT = THREE.RepeatWrapping
-  tex.repeat.set(0.5, 0.5)
-  return tex
+const sideCanvas = document.createElement('canvas')
+sideCanvas.width = 2 * PX
+sideCanvas.height = PX
+const sideTexture = new THREE.CanvasTexture(sideCanvas)
+sideTexture.colorSpace = THREE.SRGBColorSpace
+sideTexture.anisotropy = 8
+sideTexture.wrapS = THREE.RepeatWrapping
+// The side UVs count tiles (u) and the board height (v), see sideUV(); the texture holds two tiles.
+sideTexture.repeat.set(1 / 2, 1)
+
+function paintSides() {
+  const ctx = sideCanvas.getContext('2d')!
+  ;[sideGold, sideBlue].forEach((src, i) => {
+    const img = images[src]
+    if (img?.width) drawCover(ctx, img, i * PX, 0, PX, PX)
+    else {
+      ctx.fillStyle = i ? '#26306e' : '#c9a35c'
+      ctx.fillRect(i * PX, 0, PX, PX)
+    }
+    // Dark joints between the tiles.
+    ctx.strokeStyle = 'rgba(26, 20, 16, 0.7)'
+    ctx.lineWidth = PX * 0.03
+    ctx.strokeRect(i * PX, 0, PX, PX)
+  })
+  sideTexture.needsUpdate = true
 }
 
-/** The board outline (3 × 8 minus the gaps beside the bridge), extruded to the board height. */
-function boardGeometry(): THREE.ExtrudeGeometry {
-  // Shape coordinates: x = board row (0..3), y = COLS - board column.
+/** Rounding of the vertical corners and of the edges between the top and the sides. */
+const CORNER = 0.14
+const BEVEL = 0.06
+
+/** The board outline (3 × 8 minus the gaps beside the bridge) in shape coordinates: x = board row, y = COLS - column. */
+function outline(): THREE.Vector2[] {
   const gapCols = GAPS.map((g) => g.col)
   const y0 = COLS - (Math.max(...gapCols) + 1)
   const y1 = COLS - Math.min(...gapCols)
   const pts: [number, number][] = [
     [0, 0], [3, 0], [3, y0], [2, y0], [2, y1], [3, y1], [3, COLS], [0, COLS], [0, y1], [1, y1], [1, y0], [0, y0],
   ]
-  const shape = new THREE.Shape(pts.map(([x, y]) => new THREE.Vector2(x, y)))
-  const geo = new THREE.ExtrudeGeometry(shape, { depth: HEIGHT, bevelEnabled: false })
+  return pts.map(([x, y]) => new THREE.Vector2(x, y))
+}
+
+/**
+ * The outline shrunk by the bevel (the bevel grows it back) with rounded corners. The outline is
+ * counter-clockwise and has only right angles, so each corner moves inward along both edge normals.
+ */
+function roundedShape(pts: THREE.Vector2[]): THREE.Shape {
+  const n = pts.length
+  const inward = (a: THREE.Vector2, b: THREE.Vector2) => {
+    const d = b.clone().sub(a).normalize()
+    return new THREE.Vector2(-d.y, d.x)
+  }
+  const inset = pts.map((p, i) =>
+    p.clone().addScaledVector(inward(pts[(i + n - 1) % n], p).add(inward(p, pts[(i + 1) % n])), BEVEL),
+  )
+  const out: THREE.Vector2[] = []
+  inset.forEach((p, i) => {
+    const toPrev = inset[(i + n - 1) % n].clone().sub(p).normalize()
+    const toNext = inset[(i + 1) % n].clone().sub(p).normalize()
+    const convex = toPrev.cross(toNext) < 0
+    // The bevel grows convex arcs and shrinks concave ones, so both end up with radius CORNER.
+    const r = convex ? CORNER - BEVEL : CORNER + BEVEL
+    const c = p.clone().addScaledVector(toPrev.clone().add(toNext), r)
+    const a0 = Math.atan2(toPrev.y * r + p.y - c.y, toPrev.x * r + p.x - c.x)
+    let a1 = Math.atan2(toNext.y * r + p.y - c.y, toNext.x * r + p.x - c.x)
+    if (a1 - a0 > Math.PI) a1 -= 2 * Math.PI
+    if (a0 - a1 > Math.PI) a1 += 2 * Math.PI
+    for (let k = 0; k <= 8; k++) {
+      const a = a0 + ((a1 - a0) * k) / 8
+      out.push(new THREE.Vector2(c.x + Math.cos(a) * r, c.y + Math.sin(a) * r))
+    }
+  })
+  return new THREE.Shape(out)
+}
+
+/**
+ * UVs for the extrusion. The caps keep the shape coordinates, which the top texture is laid out in.
+ * On the sides, u is the distance along the sharp outline (in squares, so the tile joints meet the
+ * square edges and every corner) and v runs from the bottom (0) to the top (1) of the board.
+ */
+function uvGenerator(pts: THREE.Vector2[]) {
+  const n = pts.length
+  const starts: number[] = []
+  let total = 0
+  pts.forEach((p, i) => {
+    starts.push(total)
+    total += p.distanceTo(pts[(i + 1) % n])
+  })
+  const along = (x: number, y: number) => {
+    const q = new THREE.Vector2(x, y)
+    let best = Infinity
+    let at = 0
+    pts.forEach((a, i) => {
+      const b = pts[(i + 1) % n]
+      const ab = b.clone().sub(a)
+      const t = THREE.MathUtils.clamp(q.clone().sub(a).dot(ab) / ab.lengthSq(), 0, 1)
+      const dist = a.clone().addScaledVector(ab, t).distanceToSquared(q)
+      if (dist < best) {
+        best = dist
+        at = starts[i] + t * ab.length()
+      }
+    })
+    return at
+  }
+  const vertex = (v: ArrayLike<number>, i: number) => [v[i * 3], v[i * 3 + 1], v[i * 3 + 2]]
+  return {
+    generateTopUV(_g: THREE.ExtrudeGeometry, v: number[], a: number, b: number, c: number) {
+      return [a, b, c].map((i) => new THREE.Vector2(v[i * 3], v[i * 3 + 1]))
+    },
+    generateSideWallUV(_g: THREE.ExtrudeGeometry, v: number[], a: number, b: number, c: number, d: number) {
+      const uvs = [a, b, c, d].map((i) => {
+        const [x, y, z] = vertex(v, i)
+        return new THREE.Vector2(along(x, y), (z + BEVEL) / HEIGHT)
+      })
+      // Keep a face that crosses the start of the outline from spanning the whole perimeter.
+      for (const uv of uvs.slice(1)) {
+        if (uv.x - uvs[0].x > total / 2) uv.x -= total
+        else if (uvs[0].x - uv.x > total / 2) uv.x += total
+      }
+      return uvs
+    },
+  }
+}
+
+function boardGeometry(): THREE.ExtrudeGeometry {
+  const pts = outline()
+  const geo = new THREE.ExtrudeGeometry(roundedShape(pts), {
+    depth: HEIGHT - 2 * BEVEL,
+    bevelEnabled: true,
+    bevelThickness: BEVEL,
+    bevelSize: BEVEL,
+    bevelSegments: 4,
+    UVGenerator: uvGenerator(pts),
+  })
   // Lay the shape flat: extrusion becomes height, shape y becomes depth (column 0 farthest).
   geo.rotateX(-Math.PI / 2)
-  geo.translate(-ROWS / 2, 0, COLS / 2)
+  geo.translate(-ROWS / 2, BEVEL, COLS / 2)
   return geo
 }
 
 const board = new THREE.Mesh(boardGeometry(), [
   new THREE.MeshStandardMaterial({ map: topTexture, roughness: 0.75 }), // top and bottom caps
-  new THREE.MeshStandardMaterial({ map: stoneTexture(), roughness: 0.95 }), // sides
+  new THREE.MeshStandardMaterial({ map: sideTexture, roughness: 0.6 }), // sides and rounded edges
 ])
 board.castShadow = true
 board.receiveShadow = true
@@ -360,9 +457,11 @@ onMounted(async () => {
   el.appendChild(renderer.domElement)
   resizeObserver = new ResizeObserver(resize)
   resizeObserver.observe(el)
+  paintSides()
   update()
   resize()
   await loadImages()
+  paintSides()
   update()
 })
 
